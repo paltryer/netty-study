@@ -1,10 +1,8 @@
-package cn.chnsys.netty;
+package cn.chnsys.netty.hello;
 
-import com.sun.corba.se.internal.CosNaming.BootstrapServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringEncoder;
 
