@@ -2,27 +2,28 @@ package cn.chnsys.netty.protocol;
 
 import cn.chnsys.netty.message.Message;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageCodec;
+import io.netty.handler.codec.MessageToMessageCodec;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.ByteBuffer;
 import java.util.List;
 
 /**
- * @author Administrator
+ * @author 可分享的 消息编解码器
  * @version 1.0
- * @description 自定义编解码器
- * @date 2021/3/29 17:30
  */
 @Slf4j
-public class MessageCodec extends ByteToMessageCodec<Message> {
-
-    /**
-     * 出栈前将msg 编码成byteBuf
-     */
+@ChannelHandler.Sharable
+public class MessageCodecSharable extends MessageToMessageCodec<ByteBuf,Message> {
     @Override
-    protected void encode(ChannelHandlerContext channelHandlerContext, Message message, ByteBuf byteBuf) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, Message message, List<Object> out) throws Exception {
+        ByteBuf byteBuf = ctx.alloc().buffer();
         //1. 4字节的魔数
         byteBuf.writeBytes(new byte[]{1, 2, 3, 4});
         //2. 1字节的版本
@@ -44,13 +45,12 @@ public class MessageCodec extends ByteToMessageCodec<Message> {
         byteBuf.writeInt(bytes.length);
         //8. 写入内容
         byteBuf.writeBytes(bytes);
+        out.add(byteBuf);
     }
 
-    /**
-     * 解码 将byteBuf转换为message
-     */
     @Override
-    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuf, List<Object> list) throws Exception {
+
         int magicNum = byteBuf.readInt();
         byte version = byteBuf.readByte();
         byte serializerType = byteBuf.readByte();
