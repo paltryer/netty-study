@@ -1,7 +1,7 @@
-package cn.chnsys.netty.chat;
+package cn.chnsys.netty.server;
 
-import cn.chnsys.netty.protocol.MessageCodec;
 import cn.chnsys.netty.protocol.MessageCodecSharable;
+import cn.chnsys.netty.protocol.ProcotolFrameDecoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -9,7 +9,6 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
@@ -36,7 +35,7 @@ public class ChatServer {
                 @Override
                 protected void initChannel(SocketChannel channel) throws Exception {
                     ChannelPipeline pipeline = channel.pipeline();
-                    pipeline.addLast(new LengthFieldBasedFrameDecoder(1024, 12, 4, 0, 0));
+                    pipeline.addLast(new ProcotolFrameDecoder());
                     pipeline.addLast(LOGGING_HANDLER);
                     pipeline.addLast(MESSAGE_CODEC);
                 }
