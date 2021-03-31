@@ -1,11 +1,12 @@
 package cn.chnsys.netty.server;
 
+import cn.chnsys.netty.message.LoginRequestMessage;
+import cn.chnsys.netty.message.LoginResponseMessage;
 import cn.chnsys.netty.protocol.MessageCodecSharable;
 import cn.chnsys.netty.protocol.ProcotolFrameDecoder;
+import cn.chnsys.netty.server.service.UserServiceFactory;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -38,6 +39,22 @@ public class ChatServer {
                     pipeline.addLast(new ProcotolFrameDecoder());
                     pipeline.addLast(LOGGING_HANDLER);
                     pipeline.addLast(MESSAGE_CODEC);
+                    pipeline.addLast(new SimpleChannelInboundHandler<LoginRequestMessage>() {
+                        //处理 loginRequest消息处理handler
+                        @Override
+                        protected void channelRead0(ChannelHandlerContext channelHandlerContext, LoginRequestMessage message) throws Exception {
+                            String username = message.getUsername();
+                            String password = message.getPassword();
+                            boolean login = UserServiceFactory.getUserService().login(username, password);
+                            LoginResponseMessage responseMessage;
+                            if (login) {
+                                responseMessage = new LoginResponseMessage(true, "登录成功");
+                            } else {
+                                responseMessage = new LoginResponseMessage(false, "登录失败！");
+                            }
+                            channelHandlerContext.writeAndFlush(responseMessage);
+                        }
+                    });
                 }
             });
             ChannelFuture channelFuture = serverBootstrap.bind(8080).sync();

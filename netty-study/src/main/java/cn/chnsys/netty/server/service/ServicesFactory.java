@@ -1,6 +1,7 @@
 package cn.chnsys.netty.server.service;
 
-import cn.itcast.config.Config;
+
+import cn.chnsys.netty.config.Config;
 
 import java.io.IOException;
 import java.io.InputStream;
