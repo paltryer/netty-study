@@ -12,6 +12,11 @@ public class LoginResponseMessage extends AbstractResponseMessage {
     }
 
     @Override
+    public boolean isSuccess() {
+        return super.isSuccess();
+    }
+
+    @Override
     public int getMessageType() {
         return LoginResponseMessage;
     }

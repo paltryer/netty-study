@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionMemoryImpl implements Session {
 
+
     private final Map<String, Channel> usernameChannelMap = new ConcurrentHashMap<>();
     private final Map<Channel, String> channelUsernameMap = new ConcurrentHashMap<>();
     private final Map<Channel,Map<String,Object>> channelAttributesMap = new ConcurrentHashMap<>();

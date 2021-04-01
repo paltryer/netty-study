@@ -1,16 +1,13 @@
 package cn.chnsys.netty.server;
 
-import cn.chnsys.netty.message.LoginRequestMessage;
-import cn.chnsys.netty.message.LoginResponseMessage;
 import cn.chnsys.netty.protocol.MessageCodecSharable;
 import cn.chnsys.netty.protocol.ProcotolFrameDecoder;
-import cn.chnsys.netty.server.service.UserServiceFactory;
+import cn.chnsys.netty.server.handler.*;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
@@ -28,6 +25,15 @@ public class ChatServer {
         //日志handler可以被多个channel共享
         LoggingHandler LOGGING_HANDLER = new LoggingHandler(LogLevel.DEBUG);
         MessageCodecSharable MESSAGE_CODEC = new MessageCodecSharable();
+        //处理消息的handler
+        ChatRequestMessageHandler CHAT_REQUEST_HANDLER = new ChatRequestMessageHandler();
+        GroupChatRequestMessageHandler GROUP_CHAT_HANDLER = new GroupChatRequestMessageHandler();
+        GroupCreateRequestMessageHandler GROUP_CREATE_HANDLER = new GroupCreateRequestMessageHandler();
+        GroupMembersRequestMessageHandler GROUP_MEMBERS_HANDLER = new GroupMembersRequestMessageHandler();
+        GroupQuitRequestMessageHandler GROUP_QUIT_HANDLER = new GroupQuitRequestMessageHandler();
+        LoginRequestMessageHandler LOGIN_REQUEST_HANDLER = new LoginRequestMessageHandler();
+        QuitHandler QUIT_HANDLER = new QuitHandler();
+
         try {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
             serverBootstrap.channel(NioServerSocketChannel.class);
@@ -39,22 +45,13 @@ public class ChatServer {
                     pipeline.addLast(new ProcotolFrameDecoder());
                     pipeline.addLast(LOGGING_HANDLER);
                     pipeline.addLast(MESSAGE_CODEC);
-                    pipeline.addLast(new SimpleChannelInboundHandler<LoginRequestMessage>() {
-                        //处理 loginRequest消息处理handler
-                        @Override
-                        protected void channelRead0(ChannelHandlerContext channelHandlerContext, LoginRequestMessage message) throws Exception {
-                            String username = message.getUsername();
-                            String password = message.getPassword();
-                            boolean login = UserServiceFactory.getUserService().login(username, password);
-                            LoginResponseMessage responseMessage;
-                            if (login) {
-                                responseMessage = new LoginResponseMessage(true, "登录成功");
-                            } else {
-                                responseMessage = new LoginResponseMessage(false, "登录失败！");
-                            }
-                            channelHandlerContext.writeAndFlush(responseMessage);
-                        }
-                    });
+                    pipeline.addLast(LOGIN_REQUEST_HANDLER);
+                    pipeline.addLast(CHAT_REQUEST_HANDLER);
+                    pipeline.addLast(GROUP_CHAT_HANDLER);
+                    pipeline.addLast(GROUP_CREATE_HANDLER);
+                    pipeline.addLast(GROUP_MEMBERS_HANDLER);
+                    pipeline.addLast(GROUP_QUIT_HANDLER);
+                    pipeline.addLast(QUIT_HANDLER);
                 }
             });
             ChannelFuture channelFuture = serverBootstrap.bind(8080).sync();
