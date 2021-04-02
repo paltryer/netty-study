@@ -7,10 +7,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -37,14 +34,11 @@ public class MessageCodecSharable extends MessageToMessageCodec<ByteBuf,Message>
         //无意义，对齐填充
         byteBuf.writeByte(0xff);
         //6. 获取内容的字节数组
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-        objectOutputStream.writeObject(message);
-        byte[] bytes = byteArrayOutputStream.toByteArray();
+        byte[] serialize = Serializer.Algorithm.Java.serialize(message);
         //7. 长度
-        byteBuf.writeInt(bytes.length);
+        byteBuf.writeInt(serialize.length);
         //8. 写入内容
-        byteBuf.writeBytes(bytes);
+        byteBuf.writeBytes(serialize);
         out.add(byteBuf);
     }
 
@@ -60,9 +54,7 @@ public class MessageCodecSharable extends MessageToMessageCodec<ByteBuf,Message>
         int length = byteBuf.readInt();
         byte[] bytes = new byte[length];
         byteBuf.readBytes(bytes,0,length);
-        ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(bytes));
-        Message message = (Message) objectInputStream.readObject();
-        log.debug("{}",message);
+        Message message = Serializer.Algorithm.Java.deserialize(Message.class, bytes);
         list.add(message);
     }
 }

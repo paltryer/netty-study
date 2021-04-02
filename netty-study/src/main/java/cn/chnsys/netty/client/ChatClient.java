@@ -4,14 +4,14 @@ import cn.chnsys.netty.message.*;
 import cn.chnsys.netty.protocol.MessageCodecSharable;
 import cn.chnsys.netty.protocol.ProcotolFrameDecoder;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
@@ -37,6 +37,7 @@ public class ChatClient {
         MessageCodecSharable MESSAGE_CODEC = new MessageCodecSharable();
         CountDownLatch WAIT_FOR_lOGIN = new CountDownLatch(1);
         AtomicBoolean flag = new AtomicBoolean(false);
+        AtomicBoolean EXIT = new AtomicBoolean(false);
         try {
             Bootstrap bootstrap = new Bootstrap();
             bootstrap.channel(NioSocketChannel.class);
@@ -47,6 +48,18 @@ public class ChatClient {
                     ch.pipeline().addLast(new ProcotolFrameDecoder());
                     //ch.pipeline().addLast(LOGGING_HANDLER);
                     ch.pipeline().addLast(MESSAGE_CODEC);
+                    //客户端如果三秒内没有出栈操作，自动向服务器发送心跳，保持连接
+                    ch.pipeline().addLast(new IdleStateHandler(0, 3, 0));
+                    ch.pipeline().addLast(new ChannelDuplexHandler() {
+                        @Override
+                        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                            IdleStateEvent event = (IdleStateEvent) evt;
+                            if (event.state() == IdleState.WRITER_IDLE) {
+                                //log.debug("已经三秒没发送信息啦！");
+                                ctx.writeAndFlush(new PingMessage());
+                            }
+                        }
+                    });
                     ch.pipeline().addLast("client handler", new ChannelInboundHandlerAdapter() {
                         //连接建立后 触发 active 事件
                         @Override
@@ -83,6 +96,10 @@ public class ChatClient {
                                     System.out.println("quit");
                                     System.out.println("==================================");
                                     String command = scanner.nextLine();
+                                    if (EXIT.get()) {
+                                        return;
+                                    }
+
                                     String[] array = command.split(" ");
                                     switch (array[0]) {
                                         case "send":
@@ -125,6 +142,18 @@ public class ChatClient {
                                 //唤醒system.in线程
                                 WAIT_FOR_lOGIN.countDown();
                             }
+                        }
+
+                        @Override
+                        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+                            log.debug("连接已经断开，按任意键继续");
+                            EXIT.set(false);
+                        }
+
+                        @Override
+                        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                            log.debug("连接已经断开，按任意键继续");
+                            EXIT.set(false);
                         }
                     });
                 }
