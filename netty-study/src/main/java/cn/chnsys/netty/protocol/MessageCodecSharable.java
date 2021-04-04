@@ -1,5 +1,6 @@
 package cn.chnsys.netty.protocol;
 
+import cn.chnsys.netty.config.Config;
 import cn.chnsys.netty.message.Message;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
@@ -26,7 +27,7 @@ public class MessageCodecSharable extends MessageToMessageCodec<ByteBuf,Message>
         //2. 1字节的版本
         byteBuf.writeByte(1);
         //3. 1字节序列化方式 jdk 0， json 1
-        byteBuf.writeByte(0);
+        byteBuf.writeByte(Config.getSerializerAlgorithm().ordinal());
         //4. 1字节的指令类型
         byteBuf.writeByte(message.getMessageType());
         //5. 4字节指令请求序号
@@ -34,7 +35,7 @@ public class MessageCodecSharable extends MessageToMessageCodec<ByteBuf,Message>
         //无意义，对齐填充
         byteBuf.writeByte(0xff);
         //6. 获取内容的字节数组
-        byte[] serialize = Serializer.Algorithm.Java.serialize(message);
+        byte[] serialize = Config.getSerializerAlgorithm().serialize(message);
         //7. 长度
         byteBuf.writeInt(serialize.length);
         //8. 写入内容
@@ -53,8 +54,10 @@ public class MessageCodecSharable extends MessageToMessageCodec<ByteBuf,Message>
         byteBuf.readByte();
         int length = byteBuf.readInt();
         byte[] bytes = new byte[length];
-        byteBuf.readBytes(bytes,0,length);
-        Message message = Serializer.Algorithm.Java.deserialize(Message.class, bytes);
-        list.add(message);
+        byteBuf.readBytes(bytes, 0, length);
+        Serializer.Algorithm value = Serializer.Algorithm.values()[serializerType];
+        Class<?> messageClass = Message.getMessageClass(messageType);
+        Message deserialize = (Message) value.deserialize(messageClass, bytes);
+        list.add(deserialize);
     }
 }

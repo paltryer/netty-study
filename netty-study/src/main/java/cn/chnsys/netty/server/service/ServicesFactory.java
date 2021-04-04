@@ -10,6 +10,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 不使用容器，反射加载以某种类型结尾的对象
+ */
 public class ServicesFactory {
 
     static Properties properties;
@@ -32,7 +35,7 @@ public class ServicesFactory {
         }
     }
 
-    public static <T> T getService(Class<T> interfaceClass) {
+    public static <T> T getService(Class<?> interfaceClass) {
         return (T) map.get(interfaceClass);
     }
 }
