@@ -109,10 +109,15 @@ public class RpcClientManager {
                     method.getParameterTypes(),
                     args);
             getChannel().writeAndFlush(rpcRequestMessage);
-            //3. 使用Promise 的map来进行结果的接收    指定promise 对象接收结果线程
+            //3. 使用Promise 的map来进行结果的接收    指定promise  异步 对象接收结果线程
             DefaultPromise<Object> promise = new DefaultPromise<>(getChannel().eventLoop());
             RpcResponseMessageHandler.PROMISE.put(sequenceId, promise);
             //调用promise的阻塞等待方法
+//            promise.addListener(future -> {
+//
+//            });
+
+
             promise.await();
             if (promise.isSuccess()) {
                 //调用正常

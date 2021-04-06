@@ -30,8 +30,8 @@ public class RpcResponseMessageHandler extends SimpleChannelInboundHandler<RpcRe
         //直接打印一下  方便验证
         log.debug("{}", msg);
 
-        //根据id网promise放数据
-        Promise<Object> promise = PROMISE.get(msg.getSequenceId());
+        //根据id网promise放数据   remove : 获取值，并且移除
+        Promise<Object> promise = PROMISE.remove(msg.getSequenceId());
         if (promise != null) {
             if (msg.getExceptionValue() != null) {
                 promise.setFailure(msg.getExceptionValue());
